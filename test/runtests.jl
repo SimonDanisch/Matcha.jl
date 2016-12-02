@@ -44,3 +44,9 @@ match, matches = match_at(x, 1, 1, (Greed(x-> true), 5), Int[])
 match, matches = match_at(x, 4, 4, (Greed(x-> true), 7), Int[])
 @test match
 @test matches == Int[(4:7)...]
+
+
+x = [1,2,3,4,5,6,7]
+match, matches = match_at(x, 1, Greed(1, 0:1), (), Int[])
+@test match
+@test matches == Int[1]

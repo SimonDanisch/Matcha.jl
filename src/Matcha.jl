@@ -60,10 +60,12 @@ function match_at{F, N}(
             if !enough || isempty(rest)
                 return enough, history # we fail or not, depending whether we have enough
             end
-            # okay, we failed but already have enough.
-            # The only chance to continue is that next atom matches
-            # this is final, so no copy of history for backtracking needed
-            return match_at(list, last_state, rest[1], tail(rest), history)
+            if !isempty(rest)
+                # okay, we failed but already have enough.
+                # The only chance to continue is that next atom matches
+                # this is final, so no copy of history for backtracking needed
+                return match_at(list, last_state, rest[1], tail(rest), history)
+            end
         end
         # after match, needs to update enough
         enough = matches in greedrange
@@ -102,6 +104,21 @@ function match_at(
         list, atoms::Tuple,
     )
     match_at(list, start(list), atoms[1], tail(atoms), match_result(list))
+end
+
+function match_one(
+        list, atoms::Tuple,
+    )
+    match_one(list, start(list), atoms[1], tail(atoms), match_result(list))
+end
+function match_one(
+        list, state, atoms::Tuple,
+    )
+    atom, rest = atoms[1], tail(atoms)
+    while !done(list, state)
+        elem, state = next(list, state)
+        match, matches = match_at(list, atom, rest, match_result(list))
+    end
 end
 
 export match_at
