@@ -70,3 +70,5 @@ match, matches = matchat(x, 4, (4, anything, 7))
 x = [1,2,3,4,5,6,7]
 match, matches = matchat(x, 1, (Greed(1, 0:1), ))
 @test vcat(matches...) == Int[1]
+
+include("expr_match_test.jl")
