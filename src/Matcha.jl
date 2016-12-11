@@ -60,8 +60,14 @@ function Base.next(history, list, state)
     end
     elem, state
 end
+
+# seems like copy itself is not generic enough to just use it on any type
+_copy(x) = copy(x)
+_copy(x::String) = x
+_copy(x::Ref) = Ref(x[])
+
 function Base.copy(h::History)
-    History(copy(h.buffer), copy(h.matches), Ref(h.last_begin[]))
+    History(_copy(h.buffer), _copy(h.matches), _copy(h.last_begin))
 end
 function view_constructor{X, Y, T <: SubArray}(h::History{X, T, Y}, a, b)
     view(h.buffer, a:b)
