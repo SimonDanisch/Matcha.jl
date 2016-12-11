@@ -146,7 +146,7 @@ function inner_matchat{F, N}(
                 ismatch, history2, state2 = inner_matchat(list, last_state, rest[1], tail(rest), newbranch)
                 ismatch && return true, history2, state2
             end
-        elseif isempty(rest) && state >= last(greedrange) # rest is empty and we have enough -> stop!
+        elseif isempty(rest) && matches == last(greedrange) # rest is empty and we have enough -> stop!
             return finish_match(true, history, lastmatchstate)
         end
 
@@ -204,6 +204,8 @@ function matchitall(
     )
     matchitall(list, start(list), atoms)
 end
+
+# TODO find better non clashing name with Base
 function matchitall(
         list, state, atoms::Tuple,
     )
@@ -228,7 +230,7 @@ function forward(x, elem, state, n)
     end
     elem, state
 end
-slength(x::Union{Tuple, Array}) = length(x)
+slength(x::Union{Tuple, AbstractArray}) = length(x)
 slength(x) = 1
 @inline firstindex(v::SubArray) = v.indexes[1][1]
 @inline firstindex(v::Union{Vector, Tuple}) = firstindex(first(v))
@@ -240,13 +242,13 @@ function matchreplace(f, list, atoms)
     state, i = start(list), 1
     cmatch = matches[i]
     while !done(list, state)
+        last_state = state
         elem, state = next(list, state)
-
-        isreplace = i <= length(matches) && state == firstindex(cmatch)
+        isreplace = i <= length(matches) && last_state == firstindex(cmatch)
         replacements, n = if isreplace
             i += 1
             n = sum(map(slength, cmatch))
-            elem, state = forward(list, elem, state, n-1)
+            elem, state = forward(list, elem, state, n - 1)
             tmp = f(cmatch...)
             r = isa(tmp, Tuple) ? tmp : (tmp,)
             if i <= length(matches)
