@@ -64,7 +64,7 @@ function test(a, b)
     end
 end
 
-if VERSION < v"0.6.0"
+if VERSION < v"0.6.0-dev"
     function get_ast(f, types)
         Base.uncompressed_ast(code_lowered(f, types)[])
     end
