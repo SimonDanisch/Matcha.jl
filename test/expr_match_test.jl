@@ -64,7 +64,21 @@ function test(a, b)
     end
 end
 
-ast = Base.uncompressed_ast(code_lowered(test, (Int, Int))[])
+if VERSION < v"0.6.0"
+    function get_ast(f, types)
+        Base.uncompressed_ast(code_lowered(f, types)[])
+    end
+else
+    function get_ast(f, types)
+        li = code_lowered(test, types)[]
+        ast = li.code
+        if isa(ast, Vector{UInt8})
+            return Base.uncompressed_ast(li)
+        end
+        ast
+    end
+end
+ast = get_ast(test, (Int, Int))
 filter!(x-> x != nothing && !isa(x, LineNumberNode), ast)
 
 matches = matchitall(ast, while_pattern)
