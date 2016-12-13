@@ -42,7 +42,7 @@ while_pattern = (
 )
 
 if_pattern = (isunless, anything, is_unless_label)
-function test(a, b)
+function test{T}(a, b::T)
     if a == 10
         x = if b == 22
             7
