@@ -102,66 +102,67 @@ end
 #         return inner_matchat(list, state, rest[1], tail(rest), history)
 #     end
 # end
-function inner_matchat{F, N}(
+function inner_matchat{N}(
         list, last_state,
-        atom::F, rest::NTuple{N},
+        patterns::NTuple{N},
         history = History(list, last_state)
     )
     done(list, last_state) && return false, history, last_state
     matches = 0; lastmatchstate = last_state
     start_match(history, last_state)
     elem, state = next(history, list, last_state)
+    pattern = patterns[1]
     while true
         # greed can make one fail, but it depends on the circumstances
-        greedrange = greediness(atom)
+        greedrange = greediness(pattern)
         enough = matches in greedrange # we have enough matches when in the range of greed
 
         # okay lets get matchin'
-        matched = trymatch(atom, elem, history)
+        matched = trymatch(pattern, elem, history)
 
         if matched
             matches += 1
             lastmatchstate = last_state
         else
-            # we don't have enough matches yet to fail matching, or we don't have any more atoms to match
-            if !enough || isempty(rest)
+            # we don't have enough matches yet to fail matching, or we don't have any more patterns to match
+            if !enough || N == 1
                 return finish_match(enough, history, enough ? lastmatchstate : state) # we fail or not, depending whether we have enough
             end
-            if !isempty(rest)
+            if N > 1
                 # okay, we failed but already have enough.
-                # The only chance to continue is that next atom matches
+                # The only chance to continue is that next pattern matches
                 # this is final, so no copy of history for backtracking needed
                 finish_match(true, history, lastmatchstate)
-                return inner_matchat(list, last_state, rest[1], tail(rest), history)
+                return inner_matchat(list, last_state, tail(patterns), history)
             end
         end
         # after match, needs to update enough
         enough = matches in greedrange
 
 
-        if !isempty(rest) && enough
-            # we're in a state were the current atom can/should stop matching
-            # this is where a match of the next atom could end things!
+        if N > 1 && enough
+            # we're in a state were the current pattern can/should stop matching
+            # this is where a match of the next pattern could end things!
             if matches == last(greedrange) # we actually are at the last allowed
                 finish_match(true, history, lastmatchstate)
-                return inner_matchat(list, state, rest[1], tail(rest), history)
-            elseif trymatch(rest[1], elem, history) # lets save us the function call, when next doesn't match
+                return inner_matchat(list, state, tail(patterns), history)
+            elseif trymatch(patterns[2], elem, history) # lets save us the function call, when next doesn't match
                 # a copy of history is needed, since we can backtrack
                 newbranch = copy(history)
                 finish_match(true, newbranch, lastmatchstate - 1)
-                ismatch, history2, state2 = inner_matchat(list, last_state, rest[1], tail(rest), newbranch)
+                ismatch, history2, state2 = inner_matchat(list, last_state, tail(patterns), newbranch)
                 ismatch && return true, history2, state2
             end
-        elseif isempty(rest) && matches == last(greedrange) # rest is empty and we have enough -> stop!
+        elseif N == 1 && matches == last(greedrange) # rest is empty and we have enough -> stop!
             return finish_match(true, history, lastmatchstate)
         end
 
         # we matched!
-        # But if we have enough and the next atom starts matching, we must stop here
+        # But if we have enough and the next pattern starts matching, we must stop here
         if done(list, state)
             # this madness is over!
             # if succesfull or not depends on whether we have enough and no rest!
-            success = enough && isempty(rest)
+            success = enough && N == 1
             return finish_match(success, history, success ? lastmatchstate : state)
         end
         # okay, we're here, meaning we matched in some way and can continue making history!
@@ -181,24 +182,23 @@ function matchat(
     )
     history = History(list, state)
     matched, hist, state = inner_matchat(
-        list, state, patterns[1], tail(patterns), history
+        list, state, patterns, history
     )
     matched, hist.matches
 end
 
 function matchone(
-        list, atoms::Tuple,
+        list, patterns::Tuple,
     )
-    matchone(list, start(list), atoms)
+    matchone(list, start(list), patterns)
 end
 function matchone(
-        list, state, atoms::Tuple,
+        list, state, patterns::Tuple,
     )
-    atom, rest = atoms[1], tail(atoms)
     history = History(list, state)
     while !done(list, state)
         history = History(list, state)
-        match, history, _ = inner_matchat(list, state, atom, rest, history)
+        match, history, _ = inner_matchat(list, state, patterns, history)
         match && return true, history.matches
         elem, state = next(list, state)
     end
@@ -206,21 +206,20 @@ function matchone(
 end
 
 function matchitall(
-        list, atoms::Tuple,
+        list, patterns::Tuple,
     )
-    matchitall(list, start(list), atoms)
+    matchitall(list, start(list), patterns)
 end
 
 # TODO find better non clashing name with Base
 function matchitall(
-        list, state, atoms::Tuple,
+        list, state, patterns::Tuple,
     )
-    atom, rest = atoms[1], tail(atoms)
     history = History(list, state)
     matches = typeof(history.matches)[]
     while !done(list, state)
         history = History(list, state)
-        match, history, _ = inner_matchat(list, state, atom, rest, history)
+        match, history, _ = inner_matchat(list, state, patterns, history)
         if match
             push!(matches, history.matches)
         end
@@ -241,8 +240,8 @@ slength(x) = 1
 @inline firstindex(v::SubArray) = v.indexes[1][1]
 @inline firstindex(v::Union{Vector, Tuple}) = firstindex(first(v))
 
-function matchreplace(f, list, atoms)
-    matches = matchitall(list, atoms)
+function matchreplace(f, list, patterns)
+    matches = matchitall(list, patterns)
     isempty(matches) && return copy(list)
     result = similar(list, 0)
     state, i = start(list), 1
