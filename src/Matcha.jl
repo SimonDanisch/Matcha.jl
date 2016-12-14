@@ -85,23 +85,6 @@ function start_match(history, state)
     history.last_begin[] = state
 end
 
-# function inner_matchat{N}(
-#         list, last_state,
-#         subpattern::Tuple, rest::NTuple{N},
-#         history = History(list, last_state)
-#     )
-#     # oh, we have a sub pattern
-#     state0 = history.last_begin[] # save state of parent patern
-#     start_match(history, last_state)
-#     matched, history, state = inner_matchat(list, last_state, subpattern[1], tail(subpattern), history)
-#     if !matched
-#         return matched, history, state
-#     else
-#         @show state history
-#         history.last_begin[] = state0 # bring back state
-#         return inner_matchat(list, state, rest[1], tail(rest), history)
-#     end
-# end
 function inner_matchat{N}(
         list, last_state,
         patterns::NTuple{N},
