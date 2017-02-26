@@ -87,7 +87,7 @@ end
 
 function inner_matchat{N}(
         list, last_state,
-        patterns::NTuple{N},
+        patterns::NTuple{N, Any},
         history = History(list, last_state)
     )
     done(list, last_state) && return false, history, last_state
