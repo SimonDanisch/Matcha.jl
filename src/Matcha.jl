@@ -53,7 +53,7 @@ end
 """
 Function that walks through `list` and saves `elem` in some way
 """
-function Base.next(history, list, state)
+function Base.next(history::History, list, state)
     elem, state = next(list, state)
     if needs_recording(history)
         push!(history.buffer, elem)
