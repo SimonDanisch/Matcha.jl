@@ -14,4 +14,4 @@ Start using Matcha today and greatly improve your health!
 
 Matching library for arbitrary iterators with clojures!
 
-You can find some usage example in [runtests.jl](https://github.com/SimonDanisch/Matcha.jl/blob/master/test/runtests.jl).
+You can find some usage examples in [runtests.jl](https://github.com/SimonDanisch/Matcha.jl/blob/master/test/runtests.jl).
