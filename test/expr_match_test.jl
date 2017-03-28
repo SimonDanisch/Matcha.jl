@@ -70,7 +70,7 @@ if VERSION < v"0.6.0-dev"
     end
 else
     function get_ast(f, types)
-        li = code_lowered(test, types)[]
+        li = code_lowered(f, types)[]
         ast = li.code
         if isa(ast, Vector{UInt8})
             return Base.uncompressed_ast(li)
