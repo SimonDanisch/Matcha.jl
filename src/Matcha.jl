@@ -1,8 +1,10 @@
 module Matcha
 
+using Compat
+
 import Base: tail, @pure
 
-abstract MatchSteering
+@compat abstract type MatchSteering end
 immutable Greed{F, T} <: MatchSteering
     x::F
     range::T
