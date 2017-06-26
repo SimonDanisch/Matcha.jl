@@ -92,7 +92,7 @@ function inner_matchat{N}(
         patterns::NTuple{N, Any},
         history = History(list, last_state)
     )
-    done(list, last_state) && return false, history, last_state
+    done(list, last_state) && return false, history, last_state, 0
     matches = 0; lastmatchstate = last_state
     start_match(history, last_state)
     elem, state = next(history, list, last_state)
@@ -111,19 +111,20 @@ function inner_matchat{N}(
         else
             # we don't have enough matches yet to fail matching, or we don't have any more patterns to match
             if !enough || N == 1
-                return finish_match(enough, history, enough ? lastmatchstate : state) # we fail or not, depending whether we have enough
+                return finish_match(enough, history, enough ? lastmatchstate : state)..., matches # we fail or not, depending whether we have enough
             end
             if N > 1
                 # okay, we failed but already have enough.
                 # The only chance to continue is that next pattern matches
                 # this is final, so no copy of history for backtracking needed
-                finish_match(true, history, lastmatchstate)
+                if matches > 0
+                    finish_match(true, history, lastmatchstate)
+                end
                 return inner_matchat(list, last_state, tail(patterns), history)
             end
         end
         # after match, needs to update enough
         enough = matches in greedrange
-
 
         if N > 1 && enough
             # we're in a state were the current pattern can/should stop matching
@@ -131,15 +132,16 @@ function inner_matchat{N}(
             if matches == last(greedrange) # we actually are at the last allowed
                 finish_match(true, history, lastmatchstate)
                 return inner_matchat(list, state, tail(patterns), history)
-            elseif trymatch(patterns[2], elem, history) # lets save us the function call, when next doesn't match
+            else
                 # a copy of history is needed, since we can backtrack
                 newbranch = copy(history)
                 finish_match(true, newbranch, lastmatchstate - 1)
-                ismatch, history2, state2 = inner_matchat(list, last_state, tail(patterns), newbranch)
-                ismatch && return true, history2, state2
+                ismatch, history2, state2, n = inner_matchat(list, last_state, tail(patterns), newbranch)
+                (ismatch && n > 0) && return true, history2, state2, matches
             end
         elseif N == 1 && matches == last(greedrange) # rest is empty and we have enough -> stop!
-            return finish_match(true, history, lastmatchstate)
+            res = finish_match(true, history, lastmatchstate)
+            return res..., matches
         end
 
         # we matched!
@@ -147,14 +149,14 @@ function inner_matchat{N}(
         if done(list, state)
             # this madness is over!
             # if succesfull or not depends on whether we have enough and no rest!
-            success = enough && N == 1
-            return finish_match(success, history, success ? lastmatchstate : state)
+            success = enough && (N == 1 || all(x-> 0 in greediness(x), tail(patterns)))
+            return finish_match(success, history, success ? lastmatchstate : state)..., matches
         end
         # okay, we're here, meaning we matched in some way and can continue making history!
         last_state = state;
         elem, state = next(history, list, last_state)
     end
-    return false, history, last_state # should be dead code
+    return false, history, last_state, matches # should be dead code
 end
 
 function matchat(
@@ -166,7 +168,7 @@ function matchat(
         list, state, patterns::Tuple,
     )
     history = History(list, state)
-    matched, hist, state = inner_matchat(
+    matched, hist, state, n = inner_matchat(
         list, state, patterns, history
     )
     matched, hist.matches
@@ -183,7 +185,7 @@ function matchone(
     history = History(list, state)
     while !done(list, state)
         history = History(list, state)
-        match, history, _ = inner_matchat(list, state, patterns, history)
+        match, history, _, n = inner_matchat(list, state, patterns, history)
         match && return true, history.matches
         elem, state = next(list, state)
     end
@@ -204,7 +206,7 @@ function matchitall(
     matches = typeof(history.matches)[]
     while !done(list, state)
         history = History(list, state)
-        match, history, _ = inner_matchat(list, state, patterns, history)
+        match, history, _, n = inner_matchat(list, state, patterns, history)
         if match
             push!(matches, history.matches)
         end
