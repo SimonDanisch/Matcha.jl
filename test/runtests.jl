@@ -10,12 +10,6 @@ matched, matches = matchat(x, (
     isnumber
 ))
 
-
-matched, matches = matchat(x, (
-    Greed(x-> x in ('h', 'y', 'e'), 3:3),
-    ' ',
-    isnumber
-))
 @test matches == [SubString(x, 1, 3), SubString(x, 4, 4), SubString(x, 5, 5)]
 
 x = "(ɔ◔‿◔)ɔ ♥ (⊙.⊙(☉̃ₒ☉)⊙.⊙)"
@@ -70,5 +64,28 @@ match, matches = matchat(x, 4, (4, anything, 7))
 x = [1,2,3,4,5,6,7]
 match, matches = matchat(x, 1, (Greed(1, 0:1), ))
 @test vcat(matches...) == Int[1]
+
+# issue `Match anything, Greed(x, 0:1) not working #6`
+x = [1, 2, 3, 7, 5]
+match, matches = matchat(x, (anything, Greed(4, 0:1)))
+@test length(matches) == 1
+@test matches[1] == x
+
+x = [1, 2, 3, 4, 5]
+match, matches = matchat(x, (anything, Greed(4, 0:1)))
+@test length(matches) == 2
+@test matches[1] == [1, 2, 3]
+@test matches[2] == [4]
+
+match, matches = matchat(x, (Greed(2, 0:1), anything, Greed(4, 0:1)))
+@test length(matches) == 2
+@test matches[1] == [1, 2, 3]
+@test matches[2] == [4]
+
+match, matches = matchat(x, (Greed(1, 0:1), anything, Greed(4, 0:1)))
+@test length(matches) == 3
+@test matches[1] == [1]
+@test matches[2] == [2, 3]
+@test matches[3] == [4]
 
 include("expr_match_test.jl")
