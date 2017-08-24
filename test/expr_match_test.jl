@@ -42,7 +42,7 @@ while_pattern = (
 )
 
 if_pattern = (isunless, anything, is_unless_label)
-function test{T}(a, b::T)
+function test(a, b::T) where T
     if a == 10
         x = if b == 22
             7
@@ -64,19 +64,13 @@ function test{T}(a, b::T)
     end
 end
 
-if VERSION < v"0.6.0-dev"
-    function get_ast(f, types)
-        Base.uncompressed_ast(code_lowered(f, types)[])
+function get_ast(f, types)
+    li = code_lowered(f, types)[]
+    ast = li.code
+    if isa(ast, Vector{UInt8})
+        return Base.uncompressed_ast(li)
     end
-else
-    function get_ast(f, types)
-        li = code_lowered(f, types)[]
-        ast = li.code
-        if isa(ast, Vector{UInt8})
-            return Base.uncompressed_ast(li)
-        end
-        ast
-    end
+    ast
 end
 ast = get_ast(test, (Int, Int))
 filter!(x-> x != nothing && !isa(x, LineNumberNode), ast)
