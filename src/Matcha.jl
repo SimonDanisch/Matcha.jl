@@ -1,18 +1,16 @@
 __precompile__(true)
 module Matcha
 
-using Compat
-
 import Base: tail, @pure
 
-@compat abstract type MatchSteering end
-immutable Greed{F, T} <: MatchSteering
+abstract type MatchSteering end
+struct Greed{F, T} <: MatchSteering
     x::F
     range::T
 end
 
-Greed{F, T<:Integer}(x::F, limit::T) = Greed{F, Range{T}}(x, 1:limit)
-Greed{F}(x::F) = Greed(x, 1:typemax(Int))
+Greed(x::F, limit::T) where {F, T<:Integer} = Greed{F, Range{T}}(x, 1:limit)
+Greed(x::F) where {F} = Greed(x, 1:typemax(Int))
 
 greediness(x) = 1:1
 greediness(x::Greed) = x.range
@@ -30,7 +28,7 @@ end
 # a pattern can also be a value
 trymatch(val1, val2, history) = val1 == val2
 
-immutable History{T, VT, ST}
+struct History{T, VT, ST}
     buffer::T # optional record of elements for iterators that are volatile. If not volatile, this will be the actual iterator
     matches::Vector{VT} # flattened list of views for each sub pattern match
     last_begin::Ref{ST} # state of last pattern match begin
@@ -40,7 +38,7 @@ end
 # trait system
 Base.@pure needs_recording(x) = false
 Base.@pure view_type(x) = SubArray[]
-Base.@pure view_type{T <: AbstractString}(x::T) = SubString{T}[]
+Base.@pure view_type(x::T) where {T <: AbstractString} = SubString{T}[]
 Base.@pure function buffer_type(x)
     needs_recording(x) ? eltype(x)[] : x
 end
@@ -72,13 +70,13 @@ _copy(x::Ref) = Ref(x[])
 function Base.copy(h::History)
     History(_copy(h.buffer), _copy(h.matches), _copy(h.last_begin))
 end
-function view_constructor{X, Y, T <: SubArray}(h::History{X, T, Y}, a, b)
+function view_constructor(h::History{X, T, Y}, a, b) where {X, Y, T <: SubArray}
     view(h.buffer, a:b)
 end
-function view_constructor{X, Y, T <: SubString}(h::History{X, T, Y}, a, b)
+function view_constructor(h::History{X, T, Y}, a, b) where {X, Y, T <: SubString}
     SubString(h.buffer, a, b)
 end
-function finish_match{T, VT, ST}(matched, h::History{T, VT, ST}, state)
+function finish_match(matched, h::History{T, VT, ST}, state) where {T, VT, ST}
     if matched
         push!(h.matches, view_constructor(h, h.last_begin[], state))
     end
@@ -88,11 +86,11 @@ function start_match(history, state)
     history.last_begin[] = state
 end
 
-function inner_matchat{N}(
+function inner_matchat(
         list, last_state,
         patterns::NTuple{N, Any},
         history = History(list, last_state)
-    )
+    ) where N
     done(list, last_state) && return false, history, last_state, 0
     matches = 0; lastmatchstate = last_state
     start_match(history, last_state)
