@@ -1,8 +1,6 @@
 __precompile__(true)
 module Matcha
 
-using Compat
-
 import Base: tail, @pure
 
 abstract type MatchSteering end
