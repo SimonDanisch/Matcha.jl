@@ -226,6 +226,9 @@ slength(x) = 1
 @inline firstindex(v::SubArray) = v.indexes[1][1]
 @inline firstindex(v::Union{Vector, Tuple}) = firstindex(first(v))
 
+@inline lastindex(v::SubArray) = v.indexes[1][end]
+@inline lastindex(v::Union{Vector, Tuple}) = lastindex(last(v))
+
 function matchreplace(f, list, patterns)
     matches = matchitall(list, patterns)
     isempty(matches) && return copy(list)
@@ -256,6 +259,25 @@ function matchreplace(f, list, patterns)
     result
 end
 
+function matchreplace(f, list::AbstractVector, patterns)
+    matches = matchitall(list, patterns)
+    isempty(matches) && return copy(list)
+    result = similar(list, 0)
+    lastidx = 1
+    for cmatch in matches
+        a, b = firstindex(cmatch), lastindex(cmatch)
+        N =  sum(map(slength, cmatch))
+        @assert (b - a) == (N - 1) "$a $b $N"
+        a < lastidx && continue # ignore matches that go back
+        append!(result, view(list, lastidx:a-1))
+        lastidx = b + 1
+        tmp = f(cmatch...)
+        r = isa(tmp, Tuple) ? tmp : (tmp,)
+        push!(result, r...)
+    end
+    append!(result, @view list[lastidx:end])
+    result
+end
 
 alwaysmatch(x) = true
 const anything = Greed(alwaysmatch)
