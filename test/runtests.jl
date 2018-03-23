@@ -1,5 +1,6 @@
 using Matcha
 using Base.Test
+import Base: LabelNode, GotoNode
 
 # strings
 x = "hey 1yo whatup?"
