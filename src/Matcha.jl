@@ -62,6 +62,12 @@ function Base.next(history::History, list, state)
     elem, state
 end
 
+function safe_substring(s::AbstractString, a, b)
+    while !isvalid(s, a) a += 1 end
+    while !isvalid(s, b) b -= 1 end
+    SubString(s, a, b)
+end
+
 # seems like copy itself is not generic enough to just use it on any type
 _copy(x) = copy(x)
 _copy(x::String) = x
@@ -73,8 +79,8 @@ end
 function view_constructor(h::History{X, T, Y}, a, b) where {X, Y, T <: SubArray}
     view(h.buffer, a:b)
 end
-function view_constructor(h::History{X, T, Y}, a, b) where {X, Y, T <: SubString}
-    SubString(h.buffer, a, b)
+function view_constructor(h::History{X, T, Y}, a, b) where {X, Y, T <: SubString}    
+    safe_substring(h.buffer, a, b)
 end
 function finish_match(matched, h::History{T, VT, ST}, state) where {T, VT, ST}
     if matched
@@ -223,10 +229,15 @@ function forward(x, elem, state, n)
 end
 slength(x::Union{Tuple, AbstractArray}) = length(x)
 slength(x) = 1
-@inline firstindex(v::SubArray) = v.indexes[1][1]
+
+if VERSION < v"0.7.0-DEV.3020"
+    parentindices(v::SubArray) = v.indexes
+end
+
+@inline firstindex(v::SubArray) = parentindices(v)[1][1]
 @inline firstindex(v::Union{Vector, Tuple}) = firstindex(first(v))
 
-@inline lastindex(v::SubArray) = v.indexes[1][end]
+@inline lastindex(v::SubArray) = parentindices(v)[1][end]
 @inline lastindex(v::Union{Vector, Tuple}) = lastindex(last(v))
 
 function matchreplace(f, list, patterns)

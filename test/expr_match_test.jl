@@ -23,6 +23,40 @@ function is_goto(goto, hist, histpos)
     goto.label == label.label
 end
 
+ast = [
+    NewvarNode(SlotNumber(6)),
+    Expr(:(gotoifnot), Expr(:(call), :(==), SlotNumber(2), 10, ), 41, ),
+    Expr(:(gotoifnot), Expr(:(call), :(==), SlotNumber(3), 22, ), 9, ),
+    Expr(:(=), SlotNumber(7), 7, ),
+    GotoNode(12),
+    LabelNode(9),
+    Expr(:(=), SlotNumber(7), 8, ),
+    LabelNode(12),
+    Expr(:(=), SlotNumber(6), SlotNumber(7), ),
+    Expr(:(=), SSAValue(0), Expr(:(call), :(colon), 1, 100, ), ),
+    Expr(:(=), SlotNumber(5), Expr(:(call), :(start), SSAValue(0), ), ),
+    LabelNode(17),
+    Expr(:(gotoifnot), Expr(:(call), :(!), Expr(:(call), :(done), SSAValue(0), SlotNumber(5), ), ), 38, ),
+    Expr(:(=), SSAValue(1), Expr(:(call), :(next), SSAValue(0), SlotNumber(5), ), ),
+    Expr(:(=), SlotNumber(4), Expr(:(call), :(getfield), SSAValue(1), 1, ), ),
+    Expr(:(=), SlotNumber(5), Expr(:(call), :(getfield), SSAValue(1), 2, ), ),
+    Expr(:(=), SlotNumber(6), Expr(:(call), :(+), SlotNumber(6), SlotNumber(4), ), ),
+    Expr(:(=), SlotNumber(6), Expr(:(call), :(-), SlotNumber(6), 77, ), ),
+    Expr(:(gotoifnot), Expr(:(call), :(==), SlotNumber(4), 77, ), 31, ),
+    GotoNode(36),
+    GotoNode(36),
+    LabelNode(31),
+    Expr(:(gotoifnot), Expr(:(call), :(==), SlotNumber(4), 99, ), 36, ),
+    GotoNode(38),
+    LabelNode(36),
+    GotoNode(17),
+    LabelNode(38),
+    Expr(:return, SlotNumber(6), ),
+    LabelNode(41),
+    Expr(:return, 77, ),
+]
+
+
 
 ifelse_pattern = (
     isunless, # if branch
@@ -42,38 +76,6 @@ while_pattern = (
 )
 
 if_pattern = (isunless, anything, is_unless_label)
-function test(a, b::T) where T
-    if a == 10
-        x = if b == 22
-            7
-        else
-            8
-        end
-        for i=1:100
-            x += i
-            x -= 77
-            if i == 77
-                continue
-            elseif i == 99
-                break
-            end
-        end
-        return x
-    else
-        return 77
-    end
-end
-
-function get_ast(f, types)
-    li = code_lowered(f, types)[]
-    ast = li.code
-    if isa(ast, Vector{UInt8})
-        return Base.uncompressed_ast(li)
-    end
-    ast
-end
-ast = get_ast(test, (Int, Int))
-filter!(x-> x != nothing && !isa(x, LineNumberNode), ast)
 
 matches = matchitall(ast, while_pattern)
 @test length(matches) == 1
