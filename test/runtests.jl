@@ -1,6 +1,6 @@
 using Matcha
 using Base.Test
-import Base: LabelNode, GotoNode
+import Base: LabelNode, GotoNode, SlotNumber, SSAValue, NewvarNode
 
 # strings
 x = "hey 1yo whatup?"
