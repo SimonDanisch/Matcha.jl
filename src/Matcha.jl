@@ -1,7 +1,7 @@
 __precompile__(true)
 module Matcha
 
-import Base: tail, @pure
+import Base: tail, @pure, RefValue
 
 abstract type MatchSteering end
 struct Greed{F, T} <: MatchSteering
@@ -17,12 +17,13 @@ greediness(x::Greed) = x.range
 
 
 trymatch(ms::MatchSteering, val, history) = trymatch(ms.x, val, history)
-function trymatch(f::Function, val, history)
-    # an atomic pattern can use the match history by having two arguments
-    if applicable(f, val, history)
-        f(val, history)
+
+
+@generated function trymatch(f::Function, val, history)
+    if method_exists(f.instance, Tuple{val, history})
+        :(f(val, history))
     else
-        f(val)
+        :(f(val))
     end
 end
 # a pattern can also be a value
@@ -31,7 +32,7 @@ trymatch(val1, val2, history) = val1 == val2
 struct History{T, VT, ST}
     buffer::T # optional record of elements for iterators that are volatile. If not volatile, this will be the actual iterator
     matches::Vector{VT} # flattened list of views for each sub pattern match
-    last_begin::Ref{ST} # state of last pattern match begin
+    last_begin::RefValue{ST} # state of last pattern match begin
 end
 @inline Base.getindex(h::History, i::Integer) = h.matches[i]
 
@@ -47,8 +48,13 @@ function History(list, state)
     History(
         buffer_type(list),
         view_type(list),
-        Ref(state)
+        RefValue(state)
     )
+end
+function reset!(x::History, lastbegin)
+    empty!(x.matches)
+    x.last_begin[] = lastbegin
+    return
 end
 
 """
@@ -183,7 +189,7 @@ function matchone(
     )
     history = History(list, state)
     while !done(list, state)
-        history = History(list, state)
+        reset!(history, state)
         match, history, _, n = inner_matchat(list, state, patterns, history)
         match && return true, history.matches
         elem, state = next(list, state)
