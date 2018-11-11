@@ -1,14 +1,18 @@
+#include("../src/Matcha.jl")
+#using .Matcha
 using Matcha
-using Base.Test
-import Base: LabelNode, GotoNode, SlotNumber, SSAValue, NewvarNode
+
+using Test
+# NOTE v0.7+ LabelNode missing
+import Base: GotoNode, SlotNumber, SSAValue, NewvarNode
 
 # strings
 x = "hey 1yo whatup?"
 
 matched, matches = matchat(x, (
-    Greed(x-> x in ('h', 'y', 'e'), 3:3),
+    Greed(x -> x in ('h', 'y', 'e'), 3:3),
     ' ',
-    isnumber
+    isnumeric
 ))
 
 @test matches == [SubString(x, 1, 3), SubString(x, 4, 4), SubString(x, 5, 5)]
@@ -27,6 +31,7 @@ x = [1,2,3,4,5,6]
 test1(x) = x == 2
 test2(x) = x == 3
 matched, matches = matchat(x, (isodd, test1, test2))
+
 @test matches == [view(x, 1:1), view(x, 2:2), view(x, 3:3)]
 
 # at end
@@ -89,18 +94,16 @@ match, matches = matchat(x, (Greed(1, 0:1), anything, Greed(4, 0:1)))
 @test matches[2] == [2, 3]
 @test matches[3] == [4]
 
-
-
 x = [1,2,3,4, 5,5,5, 7, 5,5,5, 8,9]
 
 replaced = matchreplace(x-> (8, 8, 8), x, (Greed(5, 3:3),))
 
 @test replaced ==[1,2,3,4, 8,8,8, 7, 8,8,8, 8,9]
 
-
 x = [1,2,3,4, 5,5,5, 7, 5,5,5, 8,9]
 
 replaced = matchreplace(x-> 7, x, (Greed(5, 3:3),))
 @test replaced ==[1,2,3,4, 7, 7, 7, 8,9]
+
 
 include("expr_match_test.jl")

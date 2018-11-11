@@ -1,3 +1,8 @@
+# Simulated 'LabelNode' for compatibility
+struct LabelNode <: Any
+    label::Int64
+end
+
 # Test for history and matchreplace
 isunless(x::Expr) = x.head == :gotoifnot
 isunless(x) = false
