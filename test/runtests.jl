@@ -1,7 +1,4 @@
-#include("../src/Matcha.jl")
-#using .Matcha
 using Matcha
-
 using Test
 # NOTE v0.7+ LabelNode missing
 import Base: GotoNode, SlotNumber, SSAValue, NewvarNode
