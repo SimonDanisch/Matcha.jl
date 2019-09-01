@@ -103,4 +103,4 @@ x = [1,2,3,4, 5,5,5, 7, 5,5,5, 8,9]
 replaced = matchreplace(x-> 7, x, (Greed(5, 3:3),))
 @test replaced ==[1,2,3,4, 7, 7, 7, 8,9]
 
-include("expr_match_test.jl")
+# include("expr_match_test.jl")
