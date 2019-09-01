@@ -110,7 +110,6 @@ function inner_matchat(
         history = History(list, last_state)
     ) where N
     elem_state = next(history, list, last_state)
-    @show elem_state
     elem_state === nothing && return (false, history, last_state, 0)
     elem, state = elem_state
     matches = 0; lastmatchstate = last_state
@@ -123,7 +122,6 @@ function inner_matchat(
 
         # okay lets get matchin'
         matched = trymatch(pattern, elem, history)
-        println(matched, " : ", elem)
         if matched
             matches += 1
             lastmatchstate = last_state
