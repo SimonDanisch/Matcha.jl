@@ -1,6 +1,5 @@
 using Matcha
 using Test
-import Base: LabelNode, GotoNode, SlotNumber, SSAValue, NewvarNode
 
 # strings
 x = "hey 1yo whatup?"
