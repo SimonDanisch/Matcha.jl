@@ -4,18 +4,34 @@ using Test
 # strings
 x = "hey 1yo whatup?"
 
+p = (
+    Greed(x-> x in ('h', 'y', 'e'), 3:3),
+    ' ',
+    isnumeric
+)
+
 matched, matches = matchat(x, (
     Greed(x-> x in ('h', 'y', 'e'), 3:3),
     ' ',
     isnumeric
 ))
-@test matches.matches == [SubString(x, 1, 3), SubString(x, 4, 4), SubString(x, 5, 5)]
+subs = SubString.(x, matches)
+@test subs == [SubString(x, 1, 3), SubString(x, 4, 4), SubString(x, 5, 5)]
 
 x = "(ɔ◔‿◔)ɔ ♥ (⊙.⊙(☉̃ₒ☉)⊙.⊙)"
 
+function test(x)
+    elem_i = iterate(x)
+    while elem_i !== nothing
+        @show elem_i
+        elem_i = iterate(x, elem_i[2])
+    end
+end
+test(x)
 matched, matches = matchat(x, (
     '(', anything, ')'
 ))
+matches = Matcha.safe_substring.(x, first.(matches), last.(matches))
 @test matches[1] == "("
 @test matches[2] == "ɔ◔‿◔"
 @test matches[3] == ")"
@@ -102,3 +118,21 @@ replaced = matchreplace(x-> 7, x, (Greed(5, 3:3),))
 @test replaced ==[1,2,3,4, 7, 7, 7, 8,9]
 
 # include("expr_match_test.jl")
+
+
+f = "blbla/12323/test"
+
+test2(f, p) = match(p, f)
+p = r"/\d+/"
+@btime test2(f, p)
+
+test(f, pat) = matchone(f, pat)
+pat = (Greed(isnumeric),)
+test(f, pat)
+
+m, matches = matchone(f, pat)
+
+SubString(f, matches[1])
+p = Matcha.Matcher.(pat)
+
+Matcha.trymatch(p[1], '1', [])
