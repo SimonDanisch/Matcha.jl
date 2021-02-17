@@ -1,9 +1,9 @@
 name = "Matcha"
 uuid = "8d673c98-5a32-5a15-b616-7dad274ffdd7"
-version = "0.2.0"
+version = "0.2.1"
 
 [compat]
-julia = "≥ 1"
+julia = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
