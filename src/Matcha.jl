@@ -1,6 +1,6 @@
 module Matcha
 
-import Base: tail, @pure
+import Base: tail
 
 abstract type MatchSteering end
 struct Greed{F, T} <: MatchSteering
@@ -40,10 +40,10 @@ end
 @inline Base.haskey(h::History, key::Symbol) = haskey(h.env, key)
 
 # trait system
-Base.@pure needs_recording(x) = false
-Base.@pure view_type(x) = SubArray[]
-Base.@pure view_type(x::T) where {T <: AbstractString} = SubString{T}[]
-Base.@pure function buffer_type(x)
+needs_recording(x) = false
+view_type(x) = SubArray[]
+view_type(x::T) where {T <: AbstractString} = SubString{T}[]
+function buffer_type(x)
     needs_recording(x) ? eltype(x)[] : x
 end
 
